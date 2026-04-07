@@ -58,7 +58,7 @@ def main():
                         lock.acquire() # "I'm going in, nobody else allowed, lock this thread"
                         if data[1] in database: 
                             response += database[data[1]]
-                            string_to_resp_bulk_string(response)
+                            response = string_to_resp_bulk_string(response)
                         else:
                             response = "$-1\r\n".encode()
                         lock.release() # "I'm going in, nobody else allowed, release this thread"
