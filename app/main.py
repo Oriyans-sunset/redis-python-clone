@@ -39,44 +39,56 @@ def main():
                 command = data[0]
                 
                 response = ""
-                if command == "ECHO":
-                    for i in range(1, len(data)):
-                        word = data[i]
-                        response += f"${len(word)}\r\n{word}\r\n"
-                    conn.sendall(response.encode())
-                elif command == "PING":
-                    response = "+PONG\r\n"
-                    conn.sendall(response.encode())
-                elif command == "SET":
-                    try:
-                        lock.acquire() # "I'm going in, nobody else allowed, lock this thread"
-                        if len(data) > 3 and data[3] == "PX":
-                            database[data[1]] = (data[2], data[4], time.time())
-                        else:
-                            database[data[1]] = (data[2], None, None)
-                        lock.release() # "I'm going in, nobody else allowed, release this thread"
-                    finally:
-                        conn.sendall(b"+OK\r\n")
-                elif command == "GET":
-                    key = data[1]
-                    try:
-                        lock.acquire() # "I'm going in, nobody else allowed, lock this thread"
-                        if key in database: 
-                            if database[key][1] != None: # there is a PX value, check time
-                                if abs(database[key][2] - time.time()) <= float(database[key][1])/1000: 
+                match command: 
+                    case "ECHO":
+                        for i in range(1, len(data)):
+                            word = data[i]
+                            response += f"${len(word)}\r\n{word}\r\n"
+                        conn.sendall(response.encode())
+                    case "PING":
+                        response = "+PONG\r\n"
+                        conn.sendall(response.encode())
+                    case "SET":
+                        try:
+                            lock.acquire() # "I'm going in, nobody else allowed, lock this thread"
+                            if len(data) > 3 and data[3] == "PX":
+                                database[data[1]] = (data[2], data[4], time.time())
+                            else:
+                                database[data[1]] = (data[2], None, None)
+                            lock.release() # "I'm going in, nobody else allowed, release this thread"
+                        finally:
+                            conn.sendall(b"+OK\r\n")
+                    case "GET":
+                        key = data[1]
+                        try:
+                            lock.acquire() # "I'm going in, nobody else allowed, lock this thread"
+                            if key in database: 
+                                if database[key][1] != None: # there is a PX value, check time
+                                    if abs(database[key][2] - time.time()) <= float(database[key][1])/1000: 
+                                        response += database[key][0]
+                                        response = string_to_resp_bulk_string(response)
+                                    else:
+                                        response = "$-1\r\n".encode()
+                                else:
                                     response += database[key][0]
                                     response = string_to_resp_bulk_string(response)
-                                else:
-                                    response = "$-1\r\n".encode()
                             else:
-                                response += database[key][0]
-                                response = string_to_resp_bulk_string(response)
-                        else:
-                            response = "$-1\r\n".encode()
-                        lock.release() # "I'm going in, nobody else allowed, release this thread"
-                    finally:
-                        conn.sendall(response)
-
+                                response = "$-1\r\n".encode()
+                            lock.release() # "I'm going in, nobody else allowed, release this thread"
+                        finally:
+                            conn.sendall(response)
+                    case "RPUSH":
+                        try:
+                            key = data[1]
+                            lock.acquire()
+                            if key in database:
+                                database[key].append(data[2])
+                            else:
+                                database[key] = []
+                            lock.release()
+                            response = f":{len(database[key])}\r\n".encode()
+                        finally:
+                            conn.sendall(response)
         finally:
             conn.close()
 
