@@ -9,14 +9,14 @@ def main():
     # Uncomment the code below to pass the first stage
 
     def resp_to_string(data):
-        text = data.decode("utf-8")
+        text = data.decode()
         print(text)
 
     def handle_connection(conn):
         try:
             while True:
                 data = conn.recv(2048)
-                print(data)
+                resp_to_string(data)
                 if not data:
                     break
             
