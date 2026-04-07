@@ -9,7 +9,7 @@ def main():
     # Uncomment the code below to pass the first stage
 
     def resp_to_string(data):
-        parts = resp_bytes.decode().split('\r\n')
+        parts = data.decode().split('\r\n')
         result = []
         
         for i in range(len(parts)):
