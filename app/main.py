@@ -8,14 +8,19 @@ def main():
 
     # Uncomment the code below to pass the first stage
 
+    def resp_to_string(data):
+        text = data.decode("utf-8")
+        print(text)
+
     def handle_connection(conn):
         try:
+            data = []
             while True:
                 data = conn.recv(2048)
-                print(data.decode("utf-8"))
+                resp_to_string(data)
                 if not data:
                     break
-                conn.sendall(b"+PONG\r\n")
+            
         finally:
             conn.close()
 
