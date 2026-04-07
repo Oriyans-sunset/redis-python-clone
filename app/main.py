@@ -1,5 +1,6 @@
 import socket  # noqa: F401
 import threading
+import time
 
 lock = threading.Lock()
 database = {}
@@ -49,16 +50,26 @@ def main():
                 elif command == "SET":
                     try:
                         lock.acquire() # "I'm going in, nobody else allowed, lock this thread"
-                        database[data[1]] = data[2]
+                        if data[3] == "PX":
+                            database[data[1]] = (data[2], data[4], time.time())
+                        else:
+                            database[data[1]] = data[2]
                         lock.release() # "I'm going in, nobody else allowed, release this thread"
                     finally:
                         conn.sendall(b"+OK\r\n")
                 elif command == "GET":
+                    key = data[1]
                     try:
                         lock.acquire() # "I'm going in, nobody else allowed, lock this thread"
-                        if data[1] in database: 
-                            response += database[data[1]]
-                            response = string_to_resp_bulk_string(response)
+                        if key in database: 
+                            if len(database[key]) > 1: # there is a PX value, check time
+                                if abs(database[key][2] - time.time()) <= database[key][1]: 
+                                    response += database[key][0]
+                                    response = string_to_resp_bulk_string(response)
+                                else:
+                                    response = "$-1\r\n".encode
+                            else:
+                                response += database[key]
                         else:
                             response = "$-1\r\n".encode()
                         lock.release() # "I'm going in, nobody else allowed, release this thread"
