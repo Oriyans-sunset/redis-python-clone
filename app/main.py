@@ -53,7 +53,7 @@ def main():
                         if len(data) > 3 and data[3] == "PX":
                             database[data[1]] = (data[2], data[4], time.time())
                         else:
-                            database[data[1]] = data[2]
+                            database[data[1]] = (data[2], None, None)
                         lock.release() # "I'm going in, nobody else allowed, release this thread"
                     finally:
                         conn.sendall(b"+OK\r\n")
@@ -62,7 +62,7 @@ def main():
                     try:
                         lock.acquire() # "I'm going in, nobody else allowed, lock this thread"
                         if key in database: 
-                            if len(database[key]) > 1: # there is a PX value, check time
+                            if database[key][1] != None: # there is a PX value, check time
                                 if abs(database[key][2] - time.time()) <= float(database[key][1])/1000: 
                                     response += database[key][0]
                                     response = string_to_resp_bulk_string(response)
