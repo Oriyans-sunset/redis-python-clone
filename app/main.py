@@ -6,17 +6,26 @@ def main():
     print("Logs from your program will appear here!")
 
     # Uncomment the code below to pass the first stage
-    #
+
+    def handle_connection(conn):
+        try:
+            while True:
+                data = conn.revc(2048)
+                if not data:
+                    break
+                conn.sendall(b"+PONG\r\n")
+        finally:
+            conn.close()
+
+
     server_socket = socket.create_server(("localhost", 6379), reuse_port=True)
-    connection, _ = server_socket.accept() # wait for client
+    
     try:
         while True:
-            data = connection.recv(4096)  
-            if not data:                  # if response is empty bytes = client disconnected
-                break
-            connection.send(b"+PONG\r\n")
+            conn, _ = server_socket.accept() # wait for client     
+            threading.Thread(target=handle_connection, args=(conn,)).start()   
     finally:
-        connection.close()
+        server_socket.close()
 
 
 if __name__ == "__main__":
