@@ -1,6 +1,8 @@
 import socket  # noqa: F401
 import threading
 
+lock = threading.Lock()
+database = {}
 
 def main():
     # You can use print statements as follows for debugging, they'll be visible when running tests.
@@ -27,16 +29,23 @@ def main():
                 data = resp_to_string(conn.recv(2048))
                 if not data:
                     break
+
+                command = data[0]
                 
                 response = ""
-                if data[0] == "ECHO":
+                if command == "ECHO":
                     for i in range(1, len(data)):
                         word = data[i]
                         response += f"${len(word)}\r\n{word}\r\n"
                     conn.sendall(response.encode())
-                elif data[0] == "PING":
+                elif command == "PING":
                     response = "+PONG\r\n"
                     conn.sendall(response.encode())
+                elif command == "SET":
+                    lock.acquire() # "I'm going in, nobody else allowed, lock this thread"
+                    database[data[1]] = data[2]
+                    lock.release() # "I'm going in, nobody else allowed, release this thread"
+
         finally:
             conn.close()
 
