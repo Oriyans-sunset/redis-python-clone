@@ -67,7 +67,7 @@ def main():
                                     response += database[key][0]
                                     response = string_to_resp_bulk_string(response)
                                 else:
-                                    response = "$-1\r\n".encode
+                                    response = "$-1\r\n".encode()
                             else:
                                 response += database[key]
                                 response = string_to_resp_bulk_string(response)
