@@ -84,7 +84,7 @@ def main():
                             if key in database:
                                 database[key].append(data[2])
                             else:
-                                database[key] = []
+                                database[key] = [data[2]]
                             response = f":{len(database[key])}\r\n".encode()
                             lock.release()
                         finally:
