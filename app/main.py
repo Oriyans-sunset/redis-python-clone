@@ -85,8 +85,8 @@ def main():
                                 database[key].append(data[2])
                             else:
                                 database[key] = []
-                            lock.release()
                             response = f":{len(database[key])}\r\n".encode()
+                            lock.release()
                         finally:
                             conn.sendall(response)
         finally:
