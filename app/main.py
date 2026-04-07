@@ -7,26 +7,30 @@ def main():
     print("Logs from your program will appear here!")
 
     # Uncomment the code below to pass the first stage
-
-    def resp_to_string(data):
+    '''
+    Return type: list of str
+    '''
+    def resp_to_string(data): 
         parts = data.decode().split('\r\n')
-        result = []
+        res = []
         
         for i in range(len(parts)):
             # If the part starts with $, the next part is our actual string
             if parts[i].startswith('$'):
-                result.append(parts[i+1])
+                res.append(parts[i+1])
                 
-        print(" ".join(result))
+        return res
 
     def handle_connection(conn):
         try:
             while True:
-                data = conn.recv(2048)
-                resp_to_string(data)
+                data = resp_to_string(conn.recv(2048))
                 if not data:
                     break
-            
+
+                if data[0] == "ECHO":
+                    response = f"+{data[1]}\r\n".encode() # encode to bytes object
+                    conn.sendall(response)
         finally:
             conn.close()
 
