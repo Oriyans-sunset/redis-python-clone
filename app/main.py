@@ -50,7 +50,7 @@ def main():
                 elif command == "SET":
                     try:
                         lock.acquire() # "I'm going in, nobody else allowed, lock this thread"
-                        if data[3] == "PX":
+                        if len(data) > 3 and data[3] == "PX":
                             database[data[1]] = (data[2], data[4], time.time())
                         else:
                             database[data[1]] = data[2]
