@@ -11,7 +11,7 @@ def main():
     def handle_connection(conn):
         try:
             while True:
-                data = conn.revc(2048)
+                data = conn.recv(2048)
                 if not data:
                     break
                 conn.sendall(b"+PONG\r\n")
