@@ -12,6 +12,7 @@ def main():
         try:
             while True:
                 data = conn.recv(2048)
+                print(data)
                 if not data:
                     break
                 conn.sendall(b"+PONG\r\n")
