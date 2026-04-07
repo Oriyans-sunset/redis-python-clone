@@ -14,10 +14,9 @@ def main():
 
     def handle_connection(conn):
         try:
-            data = []
             while True:
                 data = conn.recv(2048)
-                resp_to_string(data)
+                print(data)
                 if not data:
                     break
             
