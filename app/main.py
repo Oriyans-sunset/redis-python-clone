@@ -33,7 +33,7 @@ def main():
                     for i in range(1, len(data)):
                         word = data[i]
                         response += f"${len(word)}\r\n{word}\r\n"
-                    conn.sendall(response.encode())
+                conn.sendall(response.encode())
         finally:
             conn.close()
 
