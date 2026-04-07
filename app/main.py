@@ -29,7 +29,7 @@ def main():
                     break
 
                 if data[0] == "ECHO":
-                    response = f"*{len(data)-1}\r\n"
+                    response = ""
                     for i in range(1, len(data)):
                         word = data[i]
                         response += f"${len(word)}\r\n{word}\r\n"
