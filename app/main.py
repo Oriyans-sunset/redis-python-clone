@@ -27,9 +27,9 @@ def main():
                 data = resp_to_string(conn.recv(2048))
                 if not data:
                     break
-
+                
+                response = ""
                 if data[0] == "ECHO":
-                    response = ""
                     for i in range(1, len(data)):
                         word = data[i]
                         response += f"${len(word)}\r\n{word}\r\n"
