@@ -42,9 +42,12 @@ def main():
                     response = "+PONG\r\n"
                     conn.sendall(response.encode())
                 elif command == "SET":
-                    lock.acquire() # "I'm going in, nobody else allowed, lock this thread"
-                    database[data[1]] = data[2]
-                    lock.release() # "I'm going in, nobody else allowed, release this thread"
+                    try:
+                        lock.acquire() # "I'm going in, nobody else allowed, lock this thread"
+                        database[data[1]] = data[2]
+                        lock.release() # "I'm going in, nobody else allowed, release this thread"
+                    finally:
+                        conn.sendall(b"+OK\r\n")
 
         finally:
             conn.close()
