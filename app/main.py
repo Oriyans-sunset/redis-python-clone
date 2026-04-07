@@ -29,7 +29,10 @@ def main():
                     break
 
                 if data[0] == "ECHO":
-                    response = f"+{data[1]}\r\n".encode() # encode to bytes object
+                    response = f"*{len(data)-1}\r\n"
+                    for i in range(1, len(data)):
+                        word = data[i]
+                        response += f"${len(word)}\r\n{word}\r\n"
                     conn.sendall(response)
         finally:
             conn.close()
