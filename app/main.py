@@ -12,7 +12,7 @@ def main():
         try:
             while True:
                 data = conn.recv(2048)
-                print(data)
+                print(data.decode("utf-8"))
                 if not data:
                     break
                 conn.sendall(b"+PONG\r\n")
