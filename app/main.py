@@ -9,10 +9,14 @@ def main():
     #
     server_socket = socket.create_server(("localhost", 6379), reuse_port=True)
     connection, _ = server_socket.accept() # wait for client
-    with connection:
-        while data := connection.recv(4096):
-            _ = data
+    try:
+        while True:
+            data = connection.recv(4096)  
+            if not data:                  # if response is empty bytes = client disconnected
+                break
             connection.send(b"+PONG\r\n")
+    finally:
+        connection.close()
 
 
 if __name__ == "__main__":
