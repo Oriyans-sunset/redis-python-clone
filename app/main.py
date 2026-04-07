@@ -70,6 +70,7 @@ def main():
                                     response = "$-1\r\n".encode
                             else:
                                 response += database[key]
+                                response = string_to_resp_bulk_string(response)
                         else:
                             response = "$-1\r\n".encode()
                         lock.release() # "I'm going in, nobody else allowed, release this thread"
