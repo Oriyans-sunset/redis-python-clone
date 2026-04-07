@@ -22,6 +22,11 @@ def main():
                 res.append(parts[i+1])
                 
         return res
+    
+    def string_to_resp_bulk_string(data):
+        data_str = str(data)
+        length = len(data_str)
+        return f"${length}\r\n{data_str}\r\n".encode()
 
     def handle_connection(conn):
         try:
@@ -48,6 +53,17 @@ def main():
                         lock.release() # "I'm going in, nobody else allowed, release this thread"
                     finally:
                         conn.sendall(b"+OK\r\n")
+                elif command == "GET":
+                    try:
+                        lock.acquire() # "I'm going in, nobody else allowed, lock this thread"
+                        if data[1] in database: 
+                            response += database[data[1]]
+                            string_to_resp_bulk_string(response)
+                        else:
+                            response = "$-1\r\n".encode()
+                        lock.release() # "I'm going in, nobody else allowed, release this thread"
+                    finally:
+                        conn.sendall(response)
 
         finally:
             conn.close()
