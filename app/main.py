@@ -81,10 +81,11 @@ def main():
                         try:
                             key = data[1]
                             lock.acquire()
-                            if key in database:
-                                database[key].append(data[2])
-                            else:
-                                database[key] = [data[2]]
+                            for i in range(2, len(data)):
+                                if key in database:
+                                    database[key].append(data[i])
+                                else:
+                                    database[key] = [data[i]]
                             response = f":{len(database[key])}\r\n".encode()
                             lock.release()
                         finally:
