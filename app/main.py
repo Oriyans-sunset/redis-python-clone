@@ -9,8 +9,15 @@ def main():
     # Uncomment the code below to pass the first stage
 
     def resp_to_string(data):
-        text = data.decode()
-        print(text)
+        parts = resp_bytes.decode().split('\r\n')
+        result = []
+        
+        for i in range(len(parts)):
+            # If the part starts with $, the next part is our actual string
+            if parts[i].startswith('$'):
+                result.append(parts[i+1])
+                
+        print(" ".join(result))
 
     def handle_connection(conn):
         try:
