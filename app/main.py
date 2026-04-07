@@ -63,7 +63,7 @@ def main():
                         lock.acquire() # "I'm going in, nobody else allowed, lock this thread"
                         if key in database: 
                             if len(database[key]) > 1: # there is a PX value, check time
-                                if abs(database[key][2] - time.time()) <= float(database[key][1]): 
+                                if abs(database[key][2] - time.time()) <= float(database[key][1])/60: 
                                     response += database[key][0]
                                     response = string_to_resp_bulk_string(response)
                                 else:
