@@ -184,7 +184,7 @@ def main():
                         try:
                             key = data[1]
                             if key not in database: 
-                                response = "*0\r\n".encode()
+                                response = to_resp(0, "int")
                             else: 
                                 response = to_resp(len(database[key]), "int")
                         finally:
