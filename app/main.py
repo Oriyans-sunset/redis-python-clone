@@ -146,8 +146,8 @@ def main():
                     case "LRANGE":
                         try:
                             key = data[1]
-                            start = data[2]
-                            stop = data[3]
+                            start = int(data[2])
+                            stop = int(data[3])
                             if key not in database or not start or not stop or start >= len(database[key]) or start >= stop: 
                                 response = "*0\r\n".encode()
                             else:
