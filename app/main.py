@@ -200,12 +200,23 @@ def main():
                     case "LPOP":
                         try:
                             key = data[1]
+                            response = []
+                            pop_amount = 1 if len(data) <= 2 else data[2]
+                            if pop_amount > len(database[key]): 
+                                pop_amount = len(database[key])
+                            
 
                             lock.acquire()
                             if key not in database:
                                 response = "$-1\r\n".encode()
                             else:
-                                response = to_resp(database[key].popleft(), "bulk")
+                                for _ in range(pop_amount):
+                                    response.append(database[key].popleft())
+
+                                if len(response) == 1: 
+                                    response = to_resp(response[-1], "bulk")
+                                else:
+                                    response = to_resp(response, "array")
                             lock.release()
                         finally:
                             conn.sendall(response)
