@@ -135,12 +135,15 @@ def main():
                         try:
                             key = data[1]
                             lock.acquire()
+
+                            if key not in database:
+                                database[key] = deque()
+
                             for i in range(2, len(data)):
-                                if key in database:
-                                    database[key].append(data[i])
-                                else:
-                                    database[key] = [data[i]]
+                                database[key].append(data[i])
+
                             response = f":{len(database[key])}\r\n".encode()
+
                             lock.release()
                         finally:
                             conn.sendall(response)
@@ -148,12 +151,15 @@ def main():
                         try:
                             key = data[1]
                             lock.acquire()
+                            
+                            if key not in database:
+                                database[key] = deque()
+
                             for i in range(2, len(data)):
-                                if key in database:
-                                    database[key].appendleft(data[i])
-                                else:
-                                    database[key] = deque([data[i]])
+                                database[key].appendleft(data[i])
+
                             response = f":{len(database[key])}\r\n".encode()
+
                             lock.release()
                         finally:
                             conn.sendall(response)
@@ -171,7 +177,7 @@ def main():
                                 else:
                                     stop = stop + 1         
                                 
-                                response = to_resp(database[key][start:stop], "array")
+                                response = to_resp(list(database[key])[start:stop], "array")
                         finally:
                             conn.sendall(response)
         finally:
