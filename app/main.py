@@ -1,3 +1,4 @@
+from collections import deque
 import socket  # noqa: F401
 import threading
 import time
@@ -143,6 +144,19 @@ def main():
                             lock.release()
                         finally:
                             conn.sendall(response)
+                    case "LPUSH":
+                        try:
+                            key = data[1]
+                            lock.acquire()
+                            for i in range(2, len(data)):
+                                if key in database:
+                                    database[key].appendleft(data[i])
+                                else:
+                                    database[key] = deque([data[i]])
+                            response = f":{len(database[key])}\r\n".encode()
+                            lock.release()
+                        finally:
+                            conn.sendall(response)
                     case "LRANGE":
                         try:
                             key = data[1]
@@ -151,12 +165,7 @@ def main():
                             if key not in database or start >= len(database[key]): 
                                 response = "*0\r\n".encode()
                             else:
-                                # if stop >= len(database[key]) or stop == -1: 
-                                #     stop = len(database[key]) - 1
-                                # if start < 0 and abs(start) > len(database[key]):
-                                #     start = 0
-                                # elif start < 0: 
-                                #     start = len(database[key]) - abs(start)
+                                # if -start where start > len(database[key]), Python clamps it to 0 automatically
                                 if stop == -1:
                                     stop = len(database[key])  
                                 else:
