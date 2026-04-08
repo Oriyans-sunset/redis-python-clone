@@ -97,11 +97,11 @@ def main():
                     case "ECHO":
                         for i in range(1, len(data)):
                             word = data[i]
-                            response += f"${len(word)}\r\n{word}\r\n"
-                        conn.sendall(response.encode())
+                            response += f"${len(word)}\r\n{word}\r\n".encode()
+                        conn.sendall(response)
                     case "PING":
-                        response = "+PONG\r\n"
-                        conn.sendall(response.encode())
+                        response = "+PONG\r\n".encode()
+                        conn.sendall(response)
                     case "SET":
                         try:
                             lock.acquire() # "I'm going in, nobody else allowed, lock this thread"
@@ -109,9 +109,10 @@ def main():
                                 database[data[1]] = (data[2], data[4], time.time())
                             else:
                                 database[data[1]] = (data[2], None, None)
+                            response = b"+OK\r\n"
                             lock.release() # "I'm going in, nobody else allowed, release this thread"
                         finally:
-                            conn.sendall(b"+OK\r\n")
+                            conn.sendall(response)
                     case "GET":
                         key = data[1]
                         try:
@@ -189,6 +190,7 @@ def main():
                                 response = to_resp(len(database[key]), "int")
                         finally:
                             conn.sendall(response)
+                
 
         finally:
             conn.close()
