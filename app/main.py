@@ -95,74 +95,74 @@ def main():
                 response = ""
                 match command: 
                     case "ECHO":
-                        for i in range(1, len(data)):
-                            word = data[i]
-                            response += f"${len(word)}\r\n{word}\r\n"
-                        response = response.encode()
-                        conn.sendall(response)
+                        try:
+                            for i in range(1, len(data)):
+                                word = data[i]
+                                response += f"${len(word)}\r\n{word}\r\n"
+                            response = response.encode()
+                        finally:
+                            conn.sendall(response)
                     case "PING":
-                        response = "+PONG\r\n".encode()
-                        conn.sendall(response)
+                        try:
+                            response = "+PONG\r\n".encode()
+                        finally:
+                            conn.sendall(response)
                     case "SET":
                         try:
-                            lock.acquire() # "I'm going in, nobody else allowed, lock this thread"
-                            if len(data) > 3 and data[3] == "PX":
-                                database[data[1]] = (data[2], data[4], time.time())
-                            else:
-                                database[data[1]] = (data[2], None, None)
-                            response = b"+OK\r\n"
-                            lock.release() # "I'm going in, nobody else allowed, release this thread"
+                            with lock: # "I'm going in, nobody else allowed, lock this thread"
+                                if len(data) > 3 and data[3] == "PX":
+                                    database[data[1]] = (data[2], data[4], time.time())
+                                else:
+                                    database[data[1]] = (data[2], None, None)
+                                response = b"+OK\r\n"
                         finally:
                             conn.sendall(response)
                     case "GET":
-                        key = data[1]
                         try:
-                            lock.acquire() # "I'm going in, nobody else allowed, lock this thread"
-                            if key in database: 
-                                if database[key][1] != None: # there is a PX value, check time
-                                    if abs(database[key][2] - time.time()) <= float(database[key][1])/1000: 
+                            key = data[1]
+
+                            with lock: # "I'm going in, nobody else allowed, lock this thread"
+                                if key in database: 
+                                    if database[key][1] != None: # there is a PX value, check time
+                                        if abs(database[key][2] - time.time()) <= float(database[key][1])/1000: 
+                                            response += database[key][0]
+                                            response = to_resp(response, "bulk")
+                                        else:
+                                            response = "$-1\r\n".encode()
+                                    else:
                                         response += database[key][0]
                                         response = to_resp(response, "bulk")
-                                    else:
-                                        response = "$-1\r\n".encode()
                                 else:
-                                    response += database[key][0]
-                                    response = to_resp(response, "bulk")
-                            else:
-                                response = "$-1\r\n".encode()
-                            lock.release() # "I'm going in, nobody else allowed, release this thread"
+                                    response = "$-1\r\n".encode()
                         finally:
                             conn.sendall(response)
                     case "RPUSH":
                         try:
                             key = data[1]
-                            lock.acquire()
 
-                            if key not in database:
-                                database[key] = deque()
+                            with lock:
+                                if key not in database:
+                                    database[key] = deque()
 
-                            for i in range(2, len(data)):
-                                database[key].append(data[i])
+                                for i in range(2, len(data)):
+                                    database[key].append(data[i])
 
-                            response = f":{len(database[key])}\r\n".encode()
-
-                            lock.release()
+                                response = f":{len(database[key])}\r\n".encode()
                         finally:
                             conn.sendall(response)
                     case "LPUSH":
                         try:
                             key = data[1]
-                            lock.acquire()
+
+                            with lock:
                             
-                            if key not in database:
-                                database[key] = deque()
+                                if key not in database:
+                                    database[key] = deque()
 
-                            for i in range(2, len(data)):
-                                database[key].appendleft(data[i])
+                                for i in range(2, len(data)):
+                                    database[key].appendleft(data[i])
 
-                            response = f":{len(database[key])}\r\n".encode()
-
-                            lock.release()
+                                response = f":{len(database[key])}\r\n".encode()
                         finally:
                             conn.sendall(response)
                     case "LRANGE":
@@ -171,30 +171,28 @@ def main():
                             start = int(data[2])
                             stop = int(data[3])
 
-                            lock.acquire()
-                            if key not in database or start >= len(database[key]): 
-                                response = "*0\r\n".encode()
-                            else:
-                                # if -start where start > len(database[key]), Python clamps it to 0 automatically
-                                if stop == -1:
-                                    stop = len(database[key])  
+                            with lock:
+                                if key not in database or start >= len(database[key]): 
+                                    response = "*0\r\n".encode()
                                 else:
-                                    stop = stop + 1         
-                                
-                                response = to_resp(list(database[key])[start:stop], "array")
-                            lock.release()
+                                    # if -start where start > len(database[key]), Python clamps it to 0 automatically
+                                    if stop == -1:
+                                        stop = len(database[key])  
+                                    else:
+                                        stop = stop + 1         
+                                    
+                                    response = to_resp(list(database[key])[start:stop], "array")
                         finally:
                             conn.sendall(response)
                     case "LLEN":
                         try:
                             key = data[1]
 
-                            lock.acquire()
-                            if key not in database: 
-                                response = to_resp(0, "int")
-                            else: 
-                                response = to_resp(len(database[key]), "int")
-                            lock.release()
+                            with lock:
+                                if key not in database: 
+                                    response = to_resp(0, "int")
+                                else: 
+                                    response = to_resp(len(database[key]), "int")
                         finally:
                             conn.sendall(response)
                     case "LPOP":
@@ -202,22 +200,20 @@ def main():
                             key = data[1]
                             response = []
                             pop_amount = 1 if len(data) <= 2 else int(data[2])
-                            if pop_amount > len(database[key]): 
-                                pop_amount = len(database[key])
-                            
+                            with lock:
+                                if pop_amount > len(database[key]): 
+                                    pop_amount = len(database[key])
 
-                            lock.acquire()
-                            if key not in database:
-                                response = "$-1\r\n".encode()
-                            else:
-                                for _ in range(pop_amount):
-                                    response.append(database[key].popleft())
-
-                                if len(response) == 1: 
-                                    response = to_resp(response[-1], "bulk")
+                                if key not in database:
+                                    response = "$-1\r\n".encode()
                                 else:
-                                    response = to_resp(response, "array")
-                            lock.release()
+                                    for _ in range(pop_amount):
+                                        response.append(database[key].popleft())
+
+                                    if len(response) == 1: 
+                                        response = to_resp(response[-1], "bulk")
+                                    else:
+                                        response = to_resp(response, "array")
                         finally:
                             conn.sendall(response)
                 
