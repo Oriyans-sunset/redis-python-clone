@@ -155,7 +155,7 @@ def main():
                                     stop = len(database) - 1
                                     
                                 response = to_resp(database[key][start:stop+1], "array")
-                                print(response.decode())
+                                print(response)
                         finally:
                             conn.sendall(response)
         finally:
