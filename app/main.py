@@ -158,9 +158,9 @@ def main():
                                 # elif start < 0: 
                                 #     start = len(database[key]) - abs(start)
                                 if stop == -1:
-                                    stop = len(lst)   # slice to end
+                                    stop = len(database[key])  
                                 else:
-                                    stop += 1         # make inclusive → exclusive
+                                    stop = stop + 1         
                                 
                                 response = to_resp(database[key][start:stop], "array")
                         finally:
