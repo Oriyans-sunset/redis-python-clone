@@ -180,6 +180,16 @@ def main():
                                 response = to_resp(list(database[key])[start:stop], "array")
                         finally:
                             conn.sendall(response)
+                    case "LLEN":
+                        try:
+                            key = data[1]
+                            if key not in database: 
+                                response = "*0\r\n".encode()
+                            else: 
+                                response = to_resp(len(database[key]), "int")
+                        finally:
+                            conn.sendall(response)
+
         finally:
             conn.close()
 
