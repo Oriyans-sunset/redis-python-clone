@@ -169,6 +169,8 @@ def main():
                             key = data[1]
                             start = int(data[2])
                             stop = int(data[3])
+
+                            lock.acquire()
                             if key not in database or start >= len(database[key]): 
                                 response = "*0\r\n".encode()
                             else:
@@ -179,15 +181,31 @@ def main():
                                     stop = stop + 1         
                                 
                                 response = to_resp(list(database[key])[start:stop], "array")
+                            lock.release()
                         finally:
                             conn.sendall(response)
                     case "LLEN":
                         try:
                             key = data[1]
+
+                            lock.acquire()
                             if key not in database: 
                                 response = to_resp(0, "int")
                             else: 
                                 response = to_resp(len(database[key]), "int")
+                            lock.release()
+                        finally:
+                            conn.sendall(response)
+                    case "LPOP":
+                        try:
+                            key = data[1]
+
+                            lock.acquire()
+                            if key not in database:
+                                response = "$-1\r\n".encode()
+                            else:
+                                response = to_resp(database[key].popleft(), "bulk")
+                            lock.release()
                         finally:
                             conn.sendall(response)
                 
