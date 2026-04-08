@@ -148,7 +148,7 @@ def main():
                             key = data[1]
                             start = int(data[2])
                             stop = int(data[3])
-                            if key not in database or start >= len(database[key]) or start >= stop: 
+                            if key not in database or start >= len(database[key]): 
                                 response = "*0\r\n".encode()
                             else:
                                 if stop >= len(database[key]): 
