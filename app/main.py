@@ -36,10 +36,10 @@ def main():
         # Convert to string ONLY if it's bytes; otherwise, just stringify it
         return [x.decode('utf-8') if isinstance(x, bytes) else str(x) for x in parsed]
     
-    def string_to_resp_bulk_string(data):
-        data_str = str(data)
-        length = len(data_str)
-        return f"${length}\r\n{data_str}\r\n".encode()
+    # def string_to_resp_bulk_string(data):
+    #     data_str = str(data)
+    #     length = len(data_str)
+    #     return f"${length}\r\n{data_str}\r\n".encode()
     
     def to_resp(data, target_type='bulk'):
         # Ensure we are working with strings for the content
