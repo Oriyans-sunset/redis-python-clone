@@ -151,11 +151,8 @@ def main():
                             if key not in database or start >= len(database[key]) or start >= stop: 
                                 response = "*0\r\n".encode()
                             else:
-                                print(stop)
                                 if stop >= len(database[key]): 
-                                    stop = len(database) - 1
-                                print(start)
-                                print(stop)
+                                    stop = len(database[key]) - 1
                                     
                                 response = to_resp(database[key][start:stop+1], "array")
                         finally:
