@@ -97,7 +97,8 @@ def main():
                     case "ECHO":
                         for i in range(1, len(data)):
                             word = data[i]
-                            response += f"${len(word)}\r\n{word}\r\n".encode()
+                            response += f"${len(word)}\r\n{word}\r\n"
+                        response = response.encode()
                         conn.sendall(response)
                     case "PING":
                         response = "+PONG\r\n".encode()
