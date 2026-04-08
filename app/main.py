@@ -151,9 +151,11 @@ def main():
                             if key not in database or start >= len(database[key]): 
                                 response = "*0\r\n".encode()
                             else:
+                                print(start)
+                                print(stop)
                                 if stop >= len(database[key]): 
                                     stop = len(database[key]) - 1
-                                    
+                                
                                 response = to_resp(database[key][start:stop+1], "array")
                         finally:
                             conn.sendall(response)
