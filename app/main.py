@@ -1,6 +1,7 @@
 import socket  # noqa: F401
 import threading
 import time
+import hiredis
 
 lock = threading.Lock()
 database = {}
@@ -13,21 +14,73 @@ def main():
     '''
     Return type: list of str
     '''
-    def resp_to_string(data): 
-        parts = data.decode().split('\r\n')
-        res = []
+    # def resp_to_string(data): 
+    #     parts = data.decode().split('\r\n')
+    #     res = []
         
-        for i in range(len(parts)):
-            # If the part starts with $, the next part is our actual string
-            if parts[i].startswith('$'):
-                res.append(parts[i+1])
+    #     for i in range(len(parts)):
+    #         # If the part starts with $, the next part is our actual string
+    #         if parts[i].startswith('$'):
+    #             res.append(parts[i+1])
                 
-        return res
+    #     return res
+    
+    def resp_to_string(data):
+        reader = hiredis.Reader()
+        reader.feed(data)
+        parsed = reader.gets()
+
+        if not isinstance(parsed, list):
+            parsed = [parsed] if parsed is not None else []
+
+        # Convert to string ONLY if it's bytes; otherwise, just stringify it
+        return [x.decode('utf-8') if isinstance(x, bytes) else str(x) for x in parsed]
     
     def string_to_resp_bulk_string(data):
         data_str = str(data)
         length = len(data_str)
         return f"${length}\r\n{data_str}\r\n".encode()
+    
+    def to_resp(data, target_type='bulk'):
+        # Ensure we are working with strings for the content
+        # RESP is binary-safe, so we ultimately return bytes
+        CRLF = b"\r\n"
+
+        if data is None:
+            if target_type == 'array': return b"*-1\r\n"
+            return b"$-1\r\n"
+
+        match target_type.lower():
+            case 'simple':
+                # Format: +<string>\r\n
+                return f"+{data}".encode('utf-8') + CRLF
+
+            case 'error':
+                # Format: -<string>\r\n
+                return f"-{data}".encode('utf-8') + CRLF
+
+            case 'int':
+                # Format: :<number>\r\n
+                return f":{int(data)}".encode('utf-8') + CRLF
+
+            case 'bulk':
+                # Format: $<length>\r\n<data>\r\n
+                encoded_data = str(data).encode('utf-8')
+                return f"${len(encoded_data)}".encode('utf-8') + CRLF + encoded_data + CRLF
+
+            case 'array':
+                # Format: *<count>\r\n<elements...>
+                # This recursively calls to_resp for each item in the list
+                if not isinstance(data, list):
+                    data = [data]
+                
+                header = f"*{len(data)}".encode('utf-8') + CRLF
+                # We default nested elements to 'bulk' as that is standard Redis behavior
+                body = b"".join([to_resp(item, 'bulk') for item in data])
+                return header + body
+
+            case _:
+                raise ValueError(f"Unknown RESP type: {target_type}")
 
     def handle_connection(conn):
         try:
@@ -66,12 +119,12 @@ def main():
                                 if database[key][1] != None: # there is a PX value, check time
                                     if abs(database[key][2] - time.time()) <= float(database[key][1])/1000: 
                                         response += database[key][0]
-                                        response = string_to_resp_bulk_string(response)
+                                        response = to_resp(response, "bulk")
                                     else:
                                         response = "$-1\r\n".encode()
                                 else:
                                     response += database[key][0]
-                                    response = string_to_resp_bulk_string(response)
+                                    response = to_resp(response, "bulk")
                             else:
                                 response = "$-1\r\n".encode()
                             lock.release() # "I'm going in, nobody else allowed, release this thread"
@@ -88,6 +141,20 @@ def main():
                                     database[key] = [data[i]]
                             response = f":{len(database[key])}\r\n".encode()
                             lock.release()
+                        finally:
+                            conn.sendall(response)
+                    case "LRANGE":
+                        try:
+                            key = data[1]
+                            start = data[2]
+                            stop = data[3]
+                            if key not in database or not start or not stop or start >= len(database[key]) or start >= stop: 
+                                response = "*0\r\n".encode()
+                            else:
+                                if stop >= len(database[key]): 
+                                    stop = len(database) - 1
+                                    
+                                response = to_resp(database[key][start:stop+1], "array")
                         finally:
                             conn.sendall(response)
         finally:
