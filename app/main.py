@@ -201,7 +201,7 @@ def main():
                         try:
                             key = data[1]
                             response = []
-                            pop_amount = 1 if len(data) <= 2 else data[2]
+                            pop_amount = 1 if len(data) <= 2 else int(data[2])
                             if pop_amount > len(database[key]): 
                                 pop_amount = len(database[key])
                             
