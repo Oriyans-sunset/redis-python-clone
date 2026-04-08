@@ -153,8 +153,11 @@ def main():
                             else:
                                 if stop >= len(database[key]) or stop == -1: 
                                     stop = len(database[key]) - 1
-                                if start < 0:
+                                if start < 0 and abs(start) > len(database[key]):
+                                    start = 0
+                                elif start < 0: 
                                     start = len(database[key]) - abs(start)
+                                
 
                                 
                                 response = to_resp(database[key][start:stop+1], "array")
