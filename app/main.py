@@ -151,16 +151,18 @@ def main():
                             if key not in database or start >= len(database[key]): 
                                 response = "*0\r\n".encode()
                             else:
-                                if stop >= len(database[key]) or stop == -1: 
-                                    stop = len(database[key]) - 1
-                                if start < 0 and abs(start) > len(database[key]):
-                                    start = 0
-                                elif start < 0: 
-                                    start = len(database[key]) - abs(start)
+                                # if stop >= len(database[key]) or stop == -1: 
+                                #     stop = len(database[key]) - 1
+                                # if start < 0 and abs(start) > len(database[key]):
+                                #     start = 0
+                                # elif start < 0: 
+                                #     start = len(database[key]) - abs(start)
+                                if stop == -1:
+                                    stop = len(lst)   # slice to end
+                                else:
+                                    stop += 1         # make inclusive → exclusive
                                 
-
-                                
-                                response = to_resp(database[key][start:stop+1], "array")
+                                response = to_resp(database[key][start:stop], "array")
                         finally:
                             conn.sendall(response)
         finally:
