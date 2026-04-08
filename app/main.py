@@ -153,6 +153,7 @@ def main():
                             else:
                                 if stop >= len(database[key]): 
                                     stop = len(database) - 1
+                                print(stop)
                                     
                                 response = to_resp(database[key][start:stop+1], "array")
                         finally:
