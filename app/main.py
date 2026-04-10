@@ -233,7 +233,8 @@ def main():
                             conn.sendall(response)
                     case "BLPOP":
                         key = data[1]
-                        timeout = float(data[2])  # for this stage, always 0
+                        timeout = float(data[2])
+                        response = b"*-1\r\n"
 
                         try:
                             with lock:
@@ -242,11 +243,26 @@ def main():
 
                                 cond = get_condition(key)
 
-                                while len(database[key]) == 0:
-                                    cond.wait()
+                                if timeout == 0:
+                                    while len(database[key]) == 0:
+                                        cond.wait()
+                                else:
+                                    start_time = time.time()
 
-                                value = database[key].popleft()
-                                response = to_resp([key, value], "array")
+                                    while len(database[key]) == 0:
+                                        elapsed = time.time() - start_time
+                                        remaining = timeout - elapsed
+
+                                        if remaining <= 0:
+                                            break
+
+                                        cond.wait(timeout=remaining)
+
+                                if len(database[key]) > 0:
+                                    value = database[key].popleft()
+                                    response = to_resp([key, value], "array")
+                                else:
+                                    response = b"*-1\r\n"
                         finally:
                             conn.sendall(response)
         finally:
