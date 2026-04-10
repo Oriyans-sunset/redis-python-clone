@@ -5,7 +5,11 @@ import time
 import hiredis
 
 lock = threading.Lock()
+
+# main thread database, shared by every thread
 database = {}
+
+waiting_conditions = {}
 
 def main():
     # You can use print statements as follows for debugging, they'll be visible when running tests.
@@ -82,6 +86,11 @@ def main():
 
             case _:
                 raise ValueError(f"Unknown RESP type: {target_type}")
+    
+    def get_condition(key):
+        if key not in waiting_conditions:
+            waiting_conditions[key] = threading.Condition(lock)
+        return waiting_conditions[key]
 
     def handle_connection(conn):
         try:
@@ -148,6 +157,9 @@ def main():
                                     database[key].append(data[i])
 
                                 response = f":{len(database[key])}\r\n".encode()
+
+                                if key in waiting_conditions:
+                                    waiting_conditions[key].notify(1)
                         finally:
                             conn.sendall(response)
                     case "LPUSH":
@@ -163,6 +175,9 @@ def main():
                                     database[key].appendleft(data[i])
 
                                 response = f":{len(database[key])}\r\n".encode()
+
+                                if key in waiting_conditions:
+                                    waiting_conditions[key].notify(1)
                         finally:
                             conn.sendall(response)
                     case "LRANGE":
@@ -216,8 +231,24 @@ def main():
                                         response = to_resp(response, "array")
                         finally:
                             conn.sendall(response)
-                
+                    case "BLPOP":
+                        key = data[1]
+                        timeout = float(data[2])  # for this stage, always 0
 
+                        try:
+                            with lock:
+                                if key not in database:
+                                    database[key] = deque()
+
+                                cond = get_condition(key)
+
+                                while len(database[key]) == 0:
+                                    cond.wait()
+
+                                value = database[key].popleft()
+                                response = to_resp([key, value], "array")
+                        finally:
+                            conn.sendall(response)
         finally:
             conn.close()
 
